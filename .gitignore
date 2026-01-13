@@ -1,0 +1,19 @@
+# Nix
+result
+result-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Secrets (add your own)
+.env
+.env.local
+secrets.json

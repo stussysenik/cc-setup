@@ -1,0 +1,65 @@
+# Alacritty configuration for Claude Code development
+# Copy to ~/.config/alacritty/alacritty.toml
+
+[general]
+live_config_reload = true
+
+[window]
+padding = { x = 12, y = 12 }
+dynamic_padding = true
+opacity = 0.95
+title = "Claude Code"
+decorations = "full"
+
+[scrolling]
+history = 50000
+multiplier = 3
+
+[font]
+normal = { family = "JetBrains Mono", style = "Regular" }
+bold = { family = "JetBrains Mono", style = "Bold" }
+italic = { family = "JetBrains Mono", style = "Italic" }
+size = 12.0
+
+[font.offset]
+x = 0
+y = 1
+
+# Tokyo Night theme
+[colors.primary]
+background = "#1a1b26"
+foreground = "#c0caf5"
+
+[colors.cursor]
+text = "#1a1b26"
+cursor = "#c0caf5"
+
+[colors.selection]
+background = "#33467c"
+foreground = "#c0caf5"
+
+[colors.normal]
+black   = "#15161e"
+red     = "#f7768e"
+green   = "#9ece6a"
+yellow  = "#e0af68"
+blue    = "#7aa2f7"
+magenta = "#bb9af7"
+cyan    = "#7dcfff"
+white   = "#a9b1d6"
+
+[colors.bright]
+black   = "#414868"
+red     = "#f7768e"
+green   = "#9ece6a"
+yellow  = "#e0af68"
+blue    = "#7aa2f7"
+magenta = "#bb9af7"
+cyan    = "#7dcfff"
+white   = "#c0caf5"
+
+[keyboard]
+bindings = [
+  { key = "N", mods = "Control|Shift", action = "SpawnNewInstance" },
+  { key = "Return", mods = "Control|Shift", action = "SpawnNewInstance" },
+]
