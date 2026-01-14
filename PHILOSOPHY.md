@@ -2,6 +2,41 @@
 
 cc-setup follows these principles. Every addition must pass this filter.
 
+---
+
+## The Secret Sauce
+
+### Linus Torvalds' Rules
+1. **Good taste** - Elegant code handles edge cases structurally, not with `if` statements
+2. **8-space tabs** - If you're indenting past 3 levels, you're doing it wrong
+3. **No comments for "what"** - Code should be self-evident; comments explain "why"
+4. **Don't break userspace** - Backwards compatibility is non-negotiable
+
+### Worse Is Better (Richard Gabriel)
+Simplicity of implementation > Simplicity of interface > Completeness > Correctness
+
+A simple system that ships beats a perfect system that doesn't.
+
+### Gall's Law
+> "A complex system that works evolved from a simple system that worked."
+
+Never design complex. Start simple, evolve complexity only when forced.
+
+### Chesterton's Fence
+> "Don't remove something until you understand why it's there."
+
+Before deleting code, understand what it does. The previous author wasn't stupid.
+
+### Hyrum's Law
+> "With enough users, every observable behavior becomes depended upon."
+
+Don't expose internals. Every public API is a forever commitment.
+
+### The Rule of Three
+Don't abstract until you have 3 concrete examples. Premature abstraction is worse than duplication.
+
+---
+
 ## Core Principles
 
 ### 1. Minimal by Default
@@ -111,6 +146,102 @@ git commit -m "feat(shells): add #rust with cargo tools"
 # Never force push main
 # Main is production
 ```
+
+## AI Self-Verification (CRITICAL)
+
+**AI must PROVE its work is correct, not just claim it.**
+
+### The Verification Stack
+
+```
+Level 5: Human Review      ← Final gate, non-negotiable
+Level 4: Integration       ← Does it work with the rest?
+Level 3: Tests Pass        ← Automated proof of correctness
+Level 2: Types Check       ← Compiler catches mistakes
+Level 1: Format/Lint       ← Consistent, no obvious errors
+Level 0: It Runs           ← Bare minimum
+```
+
+### The `verify` Command
+
+Every project should have this. AI runs it before declaring done.
+
+```bash
+verify() {
+  set -e  # Fail fast
+
+  echo "▶ Format..."
+  biome format --check . 2>/dev/null || npx prettier --check . || true
+
+  echo "▶ Lint..."
+  biome lint . 2>/dev/null || npm run lint || true
+
+  echo "▶ Types..."
+  tsc --noEmit 2>/dev/null || true
+
+  echo "▶ Tests..."
+  npm test || bun test || pnpm test || echo "No tests configured"
+
+  echo "▶ Build..."
+  npm run build || bun run build || echo "No build configured"
+
+  echo "▶ Security..."
+  check-secrets
+
+  echo "✅ VERIFIED"
+}
+```
+
+### AI Must Not Say "Done" Until:
+
+1. [ ] `verify` passes with zero errors
+2. [ ] No `// TODO` or `// FIXME` left behind
+3. [ ] No `console.log` in production code
+4. [ ] No hardcoded secrets or credentials
+5. [ ] Tests cover the new code path
+6. [ ] Types are explicit, not `any`
+
+### The RALPH_COMPLETE Signal
+
+When running autonomously, AI outputs `RALPH_COMPLETE` ONLY when:
+- All tests pass
+- Build succeeds
+- No lint errors
+- Security scan clean
+
+```bash
+# The loop
+while ! verify; do
+  analyze_failure
+  fix_issue
+done
+echo "RALPH_COMPLETE"
+```
+
+### Property-Based Verification
+
+For critical logic, don't just test examples - test properties:
+
+```typescript
+// Bad: Example-based
+test('add', () => expect(add(2, 2)).toBe(4))
+
+// Good: Property-based
+test('add is commutative', () => {
+  fc.assert(fc.property(fc.integer(), fc.integer(), (a, b) => {
+    return add(a, b) === add(b, a)
+  }))
+})
+```
+
+### Idempotency Rule
+
+Running any operation twice should be safe:
+- `npm install` twice = same result
+- `verify` twice = same result
+- Migration twice = no error (check before apply)
+
+---
 
 ## What Doesn't Belong
 

@@ -362,6 +362,85 @@
           }
 
           # ═══════════════════════════════════════════════════════════════
+          # VERIFICATION (AI Self-Check)
+          # ═══════════════════════════════════════════════════════════════
+
+          verify() {
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "▶ VERIFY: Running all checks..."
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            local failed=0
+
+            echo ""
+            echo "▶ Format check..."
+            if command -v biome &>/dev/null && [[ -f biome.json ]]; then
+              biome format --check . || failed=1
+            elif [[ -f .prettierrc ]] || [[ -f .prettierrc.json ]]; then
+              npx prettier --check . || failed=1
+            else
+              echo "  (no formatter configured)"
+            fi
+
+            echo ""
+            echo "▶ Lint..."
+            if command -v biome &>/dev/null && [[ -f biome.json ]]; then
+              biome lint . || failed=1
+            elif [[ -f .eslintrc.json ]] || [[ -f eslint.config.js ]]; then
+              npm run lint 2>/dev/null || npx eslint . || failed=1
+            else
+              echo "  (no linter configured)"
+            fi
+
+            echo ""
+            echo "▶ Type check..."
+            if [[ -f tsconfig.json ]]; then
+              npx tsc --noEmit || failed=1
+            else
+              echo "  (no tsconfig.json)"
+            fi
+
+            echo ""
+            echo "▶ Tests..."
+            if [[ -f package.json ]]; then
+              npm test 2>/dev/null || bun test 2>/dev/null || pnpm test 2>/dev/null || echo "  (no test script)"
+            fi
+
+            echo ""
+            echo "▶ Build..."
+            if [[ -f package.json ]] && grep -q '"build"' package.json 2>/dev/null; then
+              npm run build || failed=1
+            else
+              echo "  (no build script)"
+            fi
+
+            echo ""
+            echo "▶ Security..."
+            check-secrets || failed=1
+
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            if [[ $failed -eq 0 ]]; then
+              echo "✅ VERIFIED - All checks passed"
+              return 0
+            else
+              echo "❌ VERIFICATION FAILED"
+              return 1
+            fi
+          }
+
+          # Quick format (auto-fix)
+          fmt() {
+            if command -v biome &>/dev/null && [[ -f biome.json ]]; then
+              biome format --write .
+              biome lint --apply .
+            elif [[ -f .prettierrc ]] || [[ -f .prettierrc.json ]]; then
+              npx prettier --write .
+            else
+              echo "No formatter configured (add biome.json or .prettierrc)"
+            fi
+          }
+
+          # ═══════════════════════════════════════════════════════════════
           # SECURITY FUNCTIONS
           # ═══════════════════════════════════════════════════════════════
 
@@ -409,6 +488,7 @@
           echo "║  STACKED       sl | prev | next | restack | submit | absorb   ║"
           echo "║  BRANCHES      exp <name> | wt-list | wt-rm | wt-prune        ║"
           echo "║  SETUP         init-project | init-husky | init-openspec      ║"
+          echo "║  VERIFY        verify | fmt (AI must run before done)         ║"
           echo "║  SECURITY      check-secrets | scan-vulns | audit             ║"
           echo "║  OBSERVE       hyperfine | btm | httpstat | oha | tokei       ║"
           echo "║  API           xh | hurl | posting | pgcli | usql           ║"
