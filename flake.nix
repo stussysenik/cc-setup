@@ -176,6 +176,63 @@
         ];
 
         # ══════════════════════════════════════════════════════════════════
+        # GRAPHICS / WASM / LOW-LEVEL
+        # ══════════════════════════════════════════════════════════════════
+
+        graphicsPkgs = with pkgs; [
+          # OpenGL
+          glfw
+          glew
+          mesa
+          libGL
+
+          # Vulkan (WebGPU backend)
+          vulkan-loader
+          vulkan-headers
+          vulkan-tools
+          shaderc           # GLSL to SPIR-V compiler
+        ];
+
+        wasmPkgs = with pkgs; [
+          # WebAssembly toolchain
+          wasmtime          # WASM runtime
+          wasmer            # Another WASM runtime
+          wasm-pack         # Rust to WASM
+          binaryen          # WASM optimizer (wasm-opt)
+          wabt              # WASM binary toolkit
+          emscripten        # C/C++ to WASM
+        ];
+
+        asmPkgs = with pkgs; [
+          # Assembly
+          nasm              # x86/x64 assembler
+          yasm              # Another assembler
+          binutils          # as, ld, objdump
+          gdb               # debugger
+          xxd               # hex dump
+        ];
+
+        # ══════════════════════════════════════════════════════════════════
+        # EDITORS (Optional - use system editor or these)
+        # ══════════════════════════════════════════════════════════════════
+
+        nvimPkgs = with pkgs; [
+          neovim
+          # LSP servers (optional, nvim can install these)
+          lua-language-server
+          nodePackages.typescript-language-server
+          nil               # Nix LSP
+        ];
+
+        emacsPkgs = with pkgs; [
+          emacs29
+          # Org mode is built-in, but useful extras:
+          sqlite            # for org-roam
+          graphviz          # for org diagrams
+          pandoc            # for export
+        ];
+
+        # ══════════════════════════════════════════════════════════════════
         # SHELL HOOK
         # ══════════════════════════════════════════════════════════════════
         commonShellHook = ''
@@ -198,13 +255,15 @@
           # ─── FZF ───
           eval "$(fzf --bash 2>/dev/null || fzf --zsh 2>/dev/null || true)"
 
-          # ─── Aliases ───
-          alias cat='bat --paging=never'
-          alias ls='eza --icons'
+          # ─── Aliases (Co-existence: POSIX untouched, fancy tools available) ───
           alias ll='eza -la --icons --git'
-          alias find='fd'
-          alias grep='rg'
-          alias diff='delta'
+          alias la='eza -a --icons'
+          alias lg='lazygit'
+          alias gd='git diff | delta'
+
+          # Fancy tools - use directly, no shadowing
+          # bat, rg, fd, delta, eza all in PATH
+          # Example: bat file.txt | rg pattern
 
           # ═══════════════════════════════════════════════════════════════
           # STACKED DIFFS (git-branchless)
@@ -289,14 +348,8 @@
 
           cc() { claude "$@"; }
 
-          # Standard ralph (requires manual experimental branch)
+          # ralph: Safe by default (creates experimental branch)
           ralph() {
-            echo "🤖 Ralph Wiggum autonomous mode"
-            claude --dangerously-skip-permissions "$@"
-          }
-
-          # Safe ralph: auto-creates experimental branch with worktree
-          ralph-safe() {
             local task_name="''${1:-autonomous}"
 
             if [[ ! -d .git ]]; then
@@ -314,19 +367,21 @@
               cd "$worktree_dir" || return 1
             fi
 
-            echo "🤖 Ralph Wiggum (SAFE) - Branch: $(git branch --show-current)"
+            echo "🤖 Ralph Wiggum - Branch: $(git branch --show-current)"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             shift  # Remove task_name from args
             claude --dangerously-skip-permissions "$@"
           }
 
-          cct() {
-            local name="''${1:-claude-$(basename $(pwd))}"
-            tmux has-session -t "$name" 2>/dev/null && tmux attach -t "$name" || tmux new-session -s "$name" "claude"
+          # ralph-yolo: Dangerous - runs on current branch (use with caution)
+          ralph-yolo() {
+            echo "⚠️  YOLO MODE - Running on current branch: $(git branch --show-current 2>/dev/null || echo 'not a git repo')"
+            echo "🤖 Ralph Wiggum autonomous mode"
+            claude --dangerously-skip-permissions "$@"
           }
 
-          # Safe cct: Creates tmux session in experimental worktree
-          cct-safe() {
+          # cct: Safe by default (creates experimental branch + tmux)
+          cct() {
             local task_name="''${1:-task}"
             local session_name="exp-''${task_name}"
 
@@ -343,25 +398,47 @@
             tmux new-session -s "$session_name" -c "$worktree_dir" "claude"
           }
 
+          # cct-yolo: Dangerous - tmux on current branch
+          cct-yolo() {
+            local name="''${1:-claude-$(basename $(pwd))}"
+            tmux has-session -t "$name" 2>/dev/null && tmux attach -t "$name" || tmux new-session -s "$name" "claude"
+          }
+
           # ═══════════════════════════════════════════════════════════════
           # PROJECT SETUP FUNCTIONS
           # ═══════════════════════════════════════════════════════════════
 
           init-project() {
+            if [[ ! -f ${self}/scripts/init-project.sh ]]; then
+              echo "❌ init-project.sh not found"
+              return 1
+            fi
             source ${self}/scripts/init-project.sh "$@"
           }
 
           init-husky() {
+            if [[ ! -f ${self}/scripts/init-husky.sh ]]; then
+              echo "❌ init-husky.sh not found"
+              return 1
+            fi
             source ${self}/scripts/init-husky.sh "$@"
           }
 
           init-openspec() {
+            if [[ ! -d ${self}/templates/openspec ]]; then
+              echo "❌ OpenSpec templates not found"
+              return 1
+            fi
             mkdir -p openspec/specs
             cp ${self}/templates/openspec/*.md openspec/
             echo "✅ OpenSpec initialized"
           }
 
           init-docs() {
+            if [[ ! -f ${self}/templates/docs/ADR-000-template.md ]]; then
+              echo "❌ ADR template not found"
+              return 1
+            fi
             mkdir -p docs/adr
             cp ${self}/templates/docs/ADR-000-template.md docs/adr/
             echo "✅ ADR template added to docs/adr/"
@@ -537,23 +614,84 @@ EOFADR
           watch() { watchexec --clear --restart -- "$@"; }
           serve() { python3 -m http.server "''${1:-8000}" 2>/dev/null || npx serve -p "''${1:-8000}"; }
 
-          # ─── Welcome ───
+          # ═══════════════════════════════════════════════════════════════
+          # HELP (Full command reference)
+          # ═══════════════════════════════════════════════════════════════
+
+          help-cc() {
+            cat << 'HELPEOF'
+╭─────────────────────────────────────────────────────────────────╮
+│  cc-setup Command Reference                                     │
+├─────────────────────────────────────────────────────────────────┤
+│  CLAUDE                                                         │
+│    cc              Start Claude                                 │
+│    ralph <task>    Autonomous (safe: creates exp branch)        │
+│    ralph-yolo      Autonomous (dangerous: current branch)       │
+│    cct <task>      Claude in tmux (safe: exp branch)            │
+│    cct-yolo        Claude in tmux (dangerous: current)          │
+│                                                                 │
+│  BRANCHES                                                       │
+│    exp <name>      Create experimental branch + worktree        │
+│    wt-list         List all worktrees                           │
+│    wt-rm <path>    Remove a worktree                            │
+│    wt-prune        Clean stale worktrees                        │
+│                                                                 │
+│  STACKED DIFFS                                                  │
+│    stack-init      Enable git-branchless in repo                │
+│    sl              Smartlog (visual commit graph)               │
+│    prev / next     Navigate commit stack                        │
+│    restack         Rebase after parent changes                  │
+│    submit          Create PRs for stack                         │
+│    absorb          Auto-fixup staged changes                    │
+│                                                                 │
+│  VERIFY                                                         │
+│    verify          Run all checks (lint, types, test, build)    │
+│    fmt             Auto-fix formatting                          │
+│                                                                 │
+│  SETUP                                                          │
+│    init-project    Copy all templates to project                │
+│    init-husky      Just pre-commit hooks                        │
+│    init-openspec   Just spec-driven development                 │
+│    init-docs       Add ADR template                             │
+│    adr 'title'     Create new Architecture Decision Record      │
+│                                                                 │
+│  SECURITY                                                       │
+│    check-secrets   Scan for leaked API keys                     │
+│    scan-vulns      Vulnerability scan (trivy)                   │
+│    audit           Full security audit                          │
+│                                                                 │
+│  API & DATABASE                                                 │
+│    xh              HTTP client (like httpie)                    │
+│    hurl            Run HTTP request files                       │
+│    posting         TUI API client                               │
+│    pgcli           PostgreSQL with autocomplete                 │
+│    usql            Universal SQL client                         │
+│                                                                 │
+│  OBSERVE                                                        │
+│    hyperfine       Benchmark commands                           │
+│    btm             Process monitor                              │
+│    httpstat        curl with timing                             │
+│    oha             HTTP load testing                            │
+│    tokei           Lines of code stats                          │
+│                                                                 │
+│  NAVIGATION                                                     │
+│    z <dir>         Smart cd (learns your dirs)                  │
+│    Ctrl+R          Fuzzy search history                         │
+│    Ctrl+T          Fuzzy find files                             │
+╰─────────────────────────────────────────────────────────────────╯
+HELPEOF
+          }
+
+          # ─── Welcome (simplified) ───
           echo ""
-          echo "╔═══════════════════════════════════════════════════════════════╗"
-          echo "║  🛠️  cc-setup: Dev Environment Boilerplate                     ║"
-          echo "╠═══════════════════════════════════════════════════════════════╣"
-          echo "║  CLAUDE        cc | ralph | cct                               ║"
-          echo "║  SAFE MODE     ralph-safe | cct-safe (auto experimental)      ║"
-          echo "║  STACKED       sl | prev | next | restack | submit | absorb   ║"
-          echo "║  BRANCHES      exp <name> | wt-list | wt-rm | wt-prune        ║"
-          echo "║  SETUP         init-project | init-husky | init-openspec      ║"
-          echo "║  DOCS          init-docs | adr 'title' (decision records)     ║"
-          echo "║  VERIFY        verify | fmt (AI must run before done)         ║"
-          echo "║  SECURITY      check-secrets | scan-vulns | audit             ║"
-          echo "║  OBSERVE       hyperfine | btm | httpstat | oha | tokei       ║"
-          echo "║  API           xh | hurl | posting | pgcli | usql           ║"
-          echo "║  NAVIGATION    z (smart cd) | Ctrl+R (fuzzy history)          ║"
-          echo "╚═══════════════════════════════════════════════════════════════╝"
+          echo "╭─────────────────────────────────────────────────────────────────╮"
+          echo "│  cc-setup                                                       │"
+          echo "├─────────────────────────────────────────────────────────────────┤"
+          echo "│  cc          Start Claude        verify    Check everything     │"
+          echo "│  ralph       Safe autonomous     init-project   Setup project   │"
+          echo "│                                                                 │"
+          echo "│  Type 'help-cc' for all commands                                │"
+          echo "╰─────────────────────────────────────────────────────────────────╯"
           echo ""
         '';
 
@@ -844,6 +982,71 @@ EOFADR
               alias expo='npx expo'
               alias expo-init='npx create-expo-app'
               alias expo-start='npx expo start'
+            '';
+          };
+
+          # ══════════════════════════════════════════════════════════════
+          # GRAPHICS / WASM / LOW-LEVEL SHELLS
+          # ══════════════════════════════════════════════════════════════
+
+          # Graphics - OpenGL/Vulkan/WebGPU development
+          graphics = pkgs.mkShell {
+            packages = corePkgs ++ cppPkgs ++ graphicsPkgs;
+            shellHook = commonShellHook + ''
+              echo "🎮 Graphics Shell (OpenGL/Vulkan/WebGPU)"
+              echo "   glxinfo    - OpenGL info"
+              echo "   vulkaninfo - Vulkan info"
+            '';
+          };
+
+          # WebAssembly - WASM development
+          wasm = pkgs.mkShell {
+            packages = corePkgs ++ webPkgs ++ rustPkgs ++ wasmPkgs;
+            shellHook = commonShellHook + ''
+              echo "🕸️  WebAssembly Shell"
+              echo "   wasm-pack  - Rust to WASM"
+              echo "   emcc       - C/C++ to WASM"
+              alias wp='wasm-pack'
+              alias emcc='emcc'
+            '';
+          };
+
+          # Assembly - Low-level programming
+          asm = pkgs.mkShell {
+            packages = corePkgs ++ asmPkgs;
+            shellHook = commonShellHook + ''
+              echo "⚙️  Assembly Shell (x86/x64)"
+              echo "   nasm       - Assembler"
+              echo "   gdb        - Debugger"
+              echo "   objdump    - Disassembler"
+            '';
+          };
+
+          # ══════════════════════════════════════════════════════════════
+          # EDITOR SHELLS
+          # ══════════════════════════════════════════════════════════════
+
+          # Neovim / LazyVim
+          nvim = pkgs.mkShell {
+            packages = corePkgs ++ nvimPkgs;
+            shellHook = commonShellHook + ''
+              echo "📝 Neovim Shell"
+              echo "   nvim       - Launch Neovim"
+              echo "   For LazyVim: git clone https://github.com/LazyVim/starter ~/.config/nvim"
+              alias vi='nvim'
+              alias vim='nvim'
+            '';
+          };
+
+          # Emacs with Org mode
+          emacs = pkgs.mkShell {
+            packages = corePkgs ++ emacsPkgs;
+            shellHook = commonShellHook + ''
+              echo "🦬 Emacs Shell (with Org mode)"
+              echo "   emacs      - Launch Emacs"
+              echo "   emacs -nw  - Terminal mode"
+              alias e='emacs'
+              alias et='emacs -nw'
             '';
           };
         };

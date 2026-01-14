@@ -31,8 +31,30 @@ nix develop github:stussysenik/cc-setup#web
 # 3. Initialize with all templates
 init-project
 
-# 4. Start coding with Claude
-cct my-new-app
+# 4. Start coding with Claude (safe mode - creates experimental branch)
+cct my-feature
+```
+
+---
+
+## Branch Safety (Read This First)
+
+When using autonomous AI agents, **always use the safe commands**:
+
+```bash
+ralph my-feature    # Creates exp/YYYYMMDD-my-feature branch, then runs Claude
+cct my-feature      # Same, but in tmux (survives disconnects)
+```
+
+Safe mode creates an **experimental branch + worktree** so:
+- Main branch stays clean
+- You can review AI's changes before merging
+- Easy to discard if you don't like the results: `wt-rm ../worktrees/...`
+
+**Dangerous mode** (use only when you know what you're doing):
+```bash
+ralph-yolo          # Runs on current branch - no safety net
+cct-yolo            # Same, in tmux
 ```
 
 ---
@@ -118,6 +140,21 @@ flowchart TD
 | Rust | `#rust` | cargo, clippy, rust-analyzer, cargo-watch |
 | C/C++ | `#cpp` | clang, cmake, ninja, gdb, valgrind |
 | Nim | `#nim` | nim, nimble, nimlsp |
+| Assembly | `#asm` | nasm, gdb, objdump |
+
+### Graphics / WebAssembly Shells
+
+| Domain | Shell | What You Get |
+|:-------|:------|:-------------|
+| OpenGL/Vulkan | `#graphics` | glfw, glew, mesa, vulkan, shaderc |
+| WebAssembly | `#wasm` | wasm-pack, emscripten, wasmtime, binaryen |
+
+### Editor Shells
+
+| Editor | Shell | What You Get |
+|:-------|:------|:-------------|
+| Neovim | `#nvim` | neovim, LSP servers, LazyVim-ready |
+| Emacs | `#emacs` | emacs29, Org mode, sqlite, pandoc |
 
 ### Optional Heavy Shells
 
@@ -291,8 +328,8 @@ flowchart LR
 | Command | What It Does |
 |:--------|:-------------|
 | `exp <name>` | Create experimental branch + worktree |
-| `ralph-safe <name>` | Auto-create exp branch, then run autonomous |
-| `cct-safe <name>` | Tmux + exp branch + autonomous |
+| `ralph <name>` | Auto-create exp branch, then run autonomous |
+| `cct <name>` | Tmux + exp branch + autonomous |
 | `wt-list` | List all worktrees |
 | `wt-rm <path>` | Remove a worktree |
 | `wt-prune` | Clean up stale worktrees |
@@ -301,7 +338,7 @@ flowchart LR
 
 ```bash
 # Start autonomous work safely
-cct-safe auth-feature
+cct auth-feature
 
 # Claude works in exp/20250114-auth-feature branch
 # When done, review changes in isolated worktree
@@ -414,10 +451,10 @@ your-project/
 ║  CLAUDE                                                               ║
 ╠═══════════════════╤═══════════════════════════════════════════════════╣
 ║  cc               │ Start Claude                                      ║
-║  ralph "task"     │ Autonomous mode (skips permission prompts)        ║
-║  cct [name]       │ Claude in tmux session (persistent)               ║
-║  ralph-safe       │ Autonomous + auto experimental branch             ║
-║  cct-safe [name]  │ Tmux + experimental branch (safest)               ║
+║  ralph <task>     │ Safe autonomous (creates exp branch)              ║
+║  ralph-yolo       │ Dangerous autonomous (current branch)             ║
+║  cct <task>       │ Safe Claude in tmux (creates exp branch)          ║
+║  cct-yolo         │ Dangerous Claude in tmux (current branch)         ║
 ╠═══════════════════╧═══════════════════════════════════════════════════╣
 ║  BRANCH SAFETY                                                        ║
 ╠═══════════════════╤═══════════════════════════════════════════════════╣

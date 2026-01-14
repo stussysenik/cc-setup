@@ -2,6 +2,17 @@
 
 cc-setup follows these principles. Every addition must pass this filter.
 
+## Quick Navigation
+
+| Section | TL;DR |
+|---------|-------|
+| [The Secret Sauce](#the-secret-sauce) | Wisdom from Linus, Gabriel, Gall |
+| [Code as Knowledge](#code-as-knowledge-generational-transfer) | Optimize for readers, not machines |
+| [Core Principles](#core-principles) | Minimal, SRP, layered, reversible |
+| [AI Self-Verification](#ai-self-verification-critical) | `verify` before "done" |
+| [The Expansion Model](#the-expansion-model) | Core → Language → Framework |
+| [Adding New Tools](#adding-new-tools-checklist) | Checklist before adding anything |
+
 ---
 
 ## The Secret Sauce
