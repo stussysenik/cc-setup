@@ -361,6 +361,65 @@
             echo "✅ OpenSpec initialized"
           }
 
+          init-docs() {
+            mkdir -p docs/adr
+            cp ${self}/templates/docs/ADR-000-template.md docs/adr/
+            echo "✅ ADR template added to docs/adr/"
+            echo "   Create new: adr 'Decision Title'"
+          }
+
+          # Create a new ADR
+          adr() {
+            local title="''${1:?Usage: adr 'Decision Title'}"
+            local dir="docs/adr"
+            mkdir -p "$dir"
+
+            # Find next number
+            local last=$(ls "$dir" 2>/dev/null | grep -E '^ADR-[0-9]+' | sort -V | tail -1 | grep -oE '[0-9]+' | head -1)
+            local next=$(printf "%03d" $((''${last:-0} + 1)))
+
+            # Create slug from title
+            local slug=$(echo "$title" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
+
+            local file="$dir/ADR-$next-$slug.md"
+
+            cat > "$file" << EOFADR
+# ADR-$next: $title
+
+## Status
+
+Proposed
+
+## Context
+
+{Why is this decision needed?}
+
+## Decision
+
+{What did we decide?}
+
+## Consequences
+
+### Positive
+-
+
+### Negative
+-
+
+## Alternatives Considered
+
+### Alternative 1:
+- Why rejected:
+
+## References
+
+-
+EOFADR
+
+            echo "✅ Created: $file"
+            echo "   Edit it, then change Status to 'Accepted'"
+          }
+
           # ═══════════════════════════════════════════════════════════════
           # VERIFICATION (AI Self-Check)
           # ═══════════════════════════════════════════════════════════════
@@ -488,6 +547,7 @@
           echo "║  STACKED       sl | prev | next | restack | submit | absorb   ║"
           echo "║  BRANCHES      exp <name> | wt-list | wt-rm | wt-prune        ║"
           echo "║  SETUP         init-project | init-husky | init-openspec      ║"
+          echo "║  DOCS          init-docs | adr 'title' (decision records)     ║"
           echo "║  VERIFY        verify | fmt (AI must run before done)         ║"
           echo "║  SECURITY      check-secrets | scan-vulns | audit             ║"
           echo "║  OBSERVE       hyperfine | btm | httpstat | oha | tokei       ║"
