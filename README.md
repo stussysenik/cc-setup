@@ -43,26 +43,32 @@ cct my-new-app
 flowchart TD
     START["What are you building?"]
 
-    START --> WEB["Web/Mobile App?"]
-    START --> AI["AI/ML/Data?"]
-    START --> SYS["Systems/Low-level?"]
-    START --> FIN["Fintech/Backend?"]
-    START --> LISP["Exploring Lisp?"]
+    START --> WEB["Web App?"]
+    START --> MOBILE["Mobile/Desktop?"]
+    START --> SYS["Systems?"]
+    START --> AI["AI/ML?"]
     START --> ALL["Everything?"]
 
     WEB --> WEBSHELL["#web"]
-    AI --> AISHELL["#ai"]
-    SYS --> SYSSHELL["#systems"]
-    FIN --> FINSHELL["#fintech"]
-    LISP --> LISPSHELL["#lisp"]
-    ALL --> FULLSHELL["#full"]
+    WEBSHELL --> FRAME["Framework?"]
+    FRAME --> NEXTJS["#nextjs"]
+    FRAME --> REACT["#react"]
+    FRAME --> SVELTE["#svelte"]
 
-    WEBSHELL --> WEBTOOLS["Node 22, Bun, Deno<br/>pnpm, TypeScript, Biome"]
-    AISHELL --> AITOOLS["Python 3.12, uv, ruff<br/>pip, virtualenv"]
-    SYSSHELL --> SYSTOOLS["Zig, Go, GCC<br/>CMake, GDB, Valgrind"]
-    FINSHELL --> FINTOOLS["Elixir, Erlang<br/>Python (data)"]
-    LISPSHELL --> LISPTOOLS["SBCL"]
-    FULLSHELL --> FULLTOOLS["Everything above"]
+    MOBILE --> CROSS["Cross-platform?"]
+    CROSS --> TAURI["#tauri (Rust+Web)"]
+    CROSS --> CAP["#capacitor (WebView)"]
+    CROSS --> RN["#react-native"]
+    CROSS --> EXPO["#expo"]
+
+    SYS --> LANG["Language?"]
+    LANG --> RUST["#rust"]
+    LANG --> CPP["#cpp"]
+    LANG --> NIM["#nim"]
+    LANG --> SYSTEMS["#systems (Zig/Go)"]
+
+    AI --> AISHELL["#ai (Python)"]
+    ALL --> FULLSHELL["#full"]
 ```
 
 ### Shell Reference
@@ -71,15 +77,56 @@ flowchart TD
 |:------------|:----|:--------|
 | React/Next.js/Svelte app | `#web` | `nix develop .#web` |
 | REST API with Express/Bun | `#web` | `nix develop .#web` |
-| Mobile app with Capacitor | `#web` | `nix develop .#web` |
 | ML model / data pipeline | `#ai` | `nix develop .#ai` |
 | Python backend (FastAPI) | `#ai` | `nix develop .#ai` |
+| Rust CLI / library | `#rust` | `nix develop .#rust` |
+| C/C++ project | `#cpp` | `nix develop .#cpp` |
+| Nim application | `#nim` | `nix develop .#nim` |
 | CLI tool in Go/Zig | `#systems` | `nix develop .#systems` |
 | Game engine / embedded | `#systems` | `nix develop .#systems` |
 | Trading system | `#fintech` | `nix develop .#fintech` |
 | Distributed backend | `#fintech` | `nix develop .#fintech` |
 | Learning Lisp | `#lisp` | `nix develop .#lisp` |
 | Full-stack polyglot | `#full` | `nix develop .#full` |
+
+### Framework-Specific Shells
+
+| Framework | Shell | What You Get |
+|:----------|:------|:-------------|
+| Next.js | `#nextjs` | App Router, `cna` alias, ESLint |
+| React + Vite | `#react` | `cra` alias (Vite template), ESLint |
+| Svelte/SvelteKit | `#svelte` | `sk` alias, svelte-add |
+| Tailwind CSS | `#tailwind` | `tw-init`, Prettier |
+| Storybook | `#storybook` | Component dev, `sb` alias |
+| Phoenix (Elixir) | `#phoenix` | Mix, Hex, PostgreSQL, inotify |
+| API Development | `#api` | OpenAPI generator, Redocly CLI |
+
+### Cross-Platform / Mobile Shells
+
+| Target | Shell | Stack |
+|:-------|:------|:------|
+| Desktop (native) | `#tauri` | Rust + Web → Windows/Mac/Linux |
+| Mobile (WebView) | `#capacitor` | Web + Capacitor → iOS/Android |
+| Mobile (native) | `#react-native` | React → native iOS/Android |
+| Mobile (managed) | `#expo` | Expo → iOS/Android (easier) |
+| iOS only | `#ios` | CocoaPods, Fastlane, xcpretty |
+
+### Systems Language Shells
+
+| Language | Shell | What You Get |
+|:---------|:------|:-------------|
+| Rust | `#rust` | cargo, clippy, rust-analyzer, cargo-watch |
+| C/C++ | `#cpp` | clang, cmake, ninja, gdb, valgrind |
+| Nim | `#nim` | nim, nimble, nimlsp |
+
+### Optional Heavy Shells
+
+These shells include large tools. Only use when needed.
+
+| Shell | Size | What You Get |
+|:------|:-----|:-------------|
+| `#re` | ~2GB | Ghidra, Radare2, binwalk, hexyl |
+| `#full` | ~4GB | Everything (all languages + tools) |
 
 ---
 
@@ -129,6 +176,33 @@ Every shell includes these essentials:
 ║     chrome-devtools   Browser automation, performance                 ║
 ║     brave-search      Web research                                    ║
 ║     playwright        E2E testing                                     ║
+║                                                                       ║
+║  📊 OBSERVABILITY                                                     ║
+║     hyperfine         Benchmark any command                           ║
+║     btm               Process monitor (bottom)                        ║
+║     httpstat          curl with timing breakdown                      ║
+║     oha               HTTP load testing                               ║
+║     tokei             Lines of code stats                             ║
+║     dog               DNS lookup with timing                          ║
+║                                                                       ║
+║  📚 STACKED DIFFS (git-branchless)                                    ║
+║     stack-init        Enable stacked diffs in repo                    ║
+║     sl                Smartlog - visual commit graph                  ║
+║     prev / next       Navigate commit stack                           ║
+║     restack           Rebase stack after changes                      ║
+║     submit            Create PRs for stack                            ║
+║     absorb            Auto-fixup staged changes                       ║
+║                                                                       ║
+║  🔌 API DEVELOPMENT                                                   ║
+║     xh                HTTP client (like curl but pretty)              ║
+║     hurl              Run HTTP requests from files                    ║
+║     posting           TUI API client (like Postman)                   ║
+║     curlie            curl with httpie syntax                         ║
+║                                                                       ║
+║  🗄️  DATABASE CLIs                                                     ║
+║     pgcli             PostgreSQL with autocomplete                    ║
+║     litecli           SQLite with autocomplete                        ║
+║     usql              Universal SQL (postgres, mysql, sqlite, etc)    ║
 ║                                                                       ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 ```
@@ -193,6 +267,96 @@ flowchart TD
 
 ---
 
+## Branch Safety (Experimental Isolation)
+
+When running autonomous agents, **always work on experimental branches** to prevent slop from hitting your main codebase.
+
+```mermaid
+flowchart LR
+    subgraph MAIN["main (protected)"]
+        M1[Reviewed code only]
+    end
+
+    subgraph EXP["exp/* branches"]
+        E1[Agent work here]
+        E2[Isolated worktrees]
+        E3[Safe to discard]
+    end
+
+    EXP -->|"Review & merge"| MAIN
+```
+
+### Safe Mode Commands
+
+| Command | What It Does |
+|:--------|:-------------|
+| `exp <name>` | Create experimental branch + worktree |
+| `ralph-safe <name>` | Auto-create exp branch, then run autonomous |
+| `cct-safe <name>` | Tmux + exp branch + autonomous |
+| `wt-list` | List all worktrees |
+| `wt-rm <path>` | Remove a worktree |
+| `wt-prune` | Clean up stale worktrees |
+
+### Example Workflow
+
+```bash
+# Start autonomous work safely
+cct-safe auth-feature
+
+# Claude works in exp/20250114-auth-feature branch
+# When done, review changes in isolated worktree
+cd ../worktrees/20250114-auth-feature
+git diff main
+
+# If good, merge. If not, just delete the worktree
+wt-rm ../worktrees/20250114-auth-feature
+```
+
+---
+
+## Stacked Diffs
+
+Modern Git workflow using `git-branchless`. Instead of long-lived branches, work in small, reviewable commits that stack on each other.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Traditional              vs.       Stacked Diffs                   │
+│  ───────────────────────────────────────────────────────────────── │
+│  feature-branch (100s of lines)     commit 1: Add model (20 lines) │
+│         ↓                                ↓                          │
+│  One massive PR                     commit 2: Add API (30 lines)   │
+│         ↓                                ↓                          │
+│  Review nightmare                   commit 3: Add UI (40 lines)    │
+│                                          ↓                          │
+│                                     3 small, focused PRs            │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Quick Start
+
+```bash
+# Enable in your repo (once)
+stack-init
+
+# View your commit graph
+sl
+
+# Navigate through commits
+prev    # go to parent commit
+next    # go to child commit
+
+# After rebasing parent, fix children
+restack
+
+# Undo any git operation
+undo
+
+# Create PRs for your stack
+submit
+```
+
+---
+
 ## Templates Included
 
 When you run `init-project`, these are copied to your project:
@@ -252,6 +416,25 @@ your-project/
 ║  cc               │ Start Claude                                      ║
 ║  ralph "task"     │ Autonomous mode (skips permission prompts)        ║
 ║  cct [name]       │ Claude in tmux session (persistent)               ║
+║  ralph-safe       │ Autonomous + auto experimental branch             ║
+║  cct-safe [name]  │ Tmux + experimental branch (safest)               ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  BRANCH SAFETY                                                        ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  exp <name>       │ Create experimental branch + worktree             ║
+║  wt-list          │ List all worktrees                                ║
+║  wt-rm <path>     │ Remove a worktree                                 ║
+║  wt-prune         │ Clean stale worktrees                             ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  STACKED DIFFS                                                        ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  stack-init       │ Enable git-branchless in repo                     ║
+║  sl               │ Smartlog (visual commit graph)                    ║
+║  prev / next      │ Navigate commit stack                             ║
+║  restack          │ Rebase stack after parent changes                 ║
+║  submit           │ Create PRs for your stack                         ║
+║  absorb           │ Auto-fixup staged changes to right commits        ║
+║  undo             │ Undo last git operation                           ║
 ╠═══════════════════╧═══════════════════════════════════════════════════╣
 ║  PROJECT SETUP                                                        ║
 ╠═══════════════════╤═══════════════════════════════════════════════════╣
@@ -270,6 +453,58 @@ your-project/
 ║  z <dir>          │ Smart cd (learns your frequent directories)       ║
 ║  Ctrl+R           │ Fuzzy search command history                      ║
 ║  Ctrl+T           │ Fuzzy find files                                  ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  OBSERVABILITY                                                        ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  hyperfine <cmd>  │ Benchmark command with stats                      ║
+║  btm              │ Process monitor (like htop but better)            ║
+║  httpstat <url>   │ curl with timing breakdown                        ║
+║  oha <url>        │ HTTP load testing                                 ║
+║  tokei            │ Count lines of code by language                   ║
+║  dog <domain>     │ DNS lookup with timing                            ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  API DEVELOPMENT                                                      ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  xh <url>         │ HTTP client (pretty curl)                         ║
+║  hurl <file>      │ Run HTTP requests from .hurl files                ║
+║  posting          │ TUI API client (like Postman)                     ║
+║  pgcli            │ PostgreSQL with autocomplete                      ║
+║  usql             │ Universal SQL client                              ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  STORYBOOK (#storybook shell)                                         ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  sb-init          │ Initialize Storybook in project                   ║
+║  sb               │ Run Storybook dev server                          ║
+║  sb-build         │ Build static Storybook                            ║
+║  chromatic        │ Visual testing with Chromatic                     ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  RUST (#rust shell)                                                   ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  cw               │ cargo watch -x check                              ║
+║  ct               │ cargo nextest run (tests)                         ║
+║  cb               │ cargo build --release                             ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  C/C++ (#cpp shell)                                                   ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  cm               │ cmake -B build -G Ninja                           ║
+║  cmb              │ cmake --build build                               ║
+║  cmt              │ ctest --test-dir build                            ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  CROSS-PLATFORM                                                       ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  tauri-init       │ Create new Tauri app                              ║
+║  tauri-dev        │ Run Tauri in dev mode                             ║
+║  cap-init         │ Initialize Capacitor                              ║
+║  cap-sync         │ Sync web code to native                           ║
+║  rn-start         │ Start React Native Metro                          ║
+║  expo-start       │ Start Expo dev server                             ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  REVERSE ENGINEERING (#re shell, optional)                            ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  ghidra           │ Launch Ghidra GUI                                 ║
+║  r2 <file>        │ Radare2 analysis                                  ║
+║  binwalk <file>   │ Firmware extraction                               ║
+║  hex <file>       │ Pretty hex viewer                                 ║
 ╠═══════════════════╧═══════════════════════════════════════════════════╣
 ║  UTILITIES                                                            ║
 ╠═══════════════════╤═══════════════════════════════════════════════════╣
@@ -368,6 +603,9 @@ A: `nix-collect-garbage -d` removes unused packages.
 
 **Q: Can I use this without Claude?**
 A: Yes, all the tools work standalone. Claude is optional.
+
+**Q: What's the design philosophy?**
+A: Minimal by default, single responsibility, easy reversal. See [PHILOSOPHY.md](./PHILOSOPHY.md).
 
 ---
 
