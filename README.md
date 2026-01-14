@@ -1,316 +1,404 @@
 # cc-setup
 
-Portable Claude Code environment with language-specific shells.
+Your swiss army knife for starting any project. One command, full environment, security baked in.
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│  ONE COMMAND. ANY MACHINE. IDENTICAL ENVIRONMENT.              │
-│                                                                │
-│  nix develop github:stussysenik/cc-setup#web                   │
-└────────────────────────────────────────────────────────────────┘
+nix develop github:stussysenik/cc-setup#web
+```
+
+## The Problem This Solves
+
+```
+BEFORE cc-setup                      AFTER cc-setup
+─────────────────────────────────    ─────────────────────────────────
+"Which node version?"                One command → everything works
+"Where's my .env?"                   Security scans on every commit
+"Did I commit an API key?"           Templates for CI/CD ready
+"How do I set up pre-commit?"        Same setup across all machines
+"What was that bash alias again?"    Identical environment everywhere
 ```
 
 ## Quick Start
 
 ```bash
-# 1. Install Nix (one-time, 2 minutes)
-curl --proto '=https' --tlsv1.2 -sSf -L \
-  https://install.determinate.systems/nix | sh -s -- install
+# 1. Install Nix (one-time, 2 min)
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 
-# 2. Restart terminal, then:
+# 2. Restart terminal, then start a project
+mkdir my-new-app && cd my-new-app
 nix develop github:stussysenik/cc-setup#web
+
+# 3. Initialize with all templates
+init-project
+
+# 4. Start coding with Claude
+cct my-new-app
 ```
 
-## How It Works
+---
+
+## Choose Your Shell
 
 ```mermaid
-flowchart TB
-    subgraph ANY_MACHINE["🖥️ Any Machine (Linux/macOS)"]
-        NIX["nix develop github:stussysenik/cc-setup#web"]
-    end
+flowchart TD
+    START["What are you building?"]
 
-    subgraph GITHUB["☁️ GitHub"]
-        FLAKE["flake.nix + flake.lock"]
-    end
+    START --> WEB["Web/Mobile App?"]
+    START --> AI["AI/ML/Data?"]
+    START --> SYS["Systems/Low-level?"]
+    START --> FIN["Fintech/Backend?"]
+    START --> LISP["Exploring Lisp?"]
+    START --> ALL["Everything?"]
 
-    subgraph NIX_STORE["📦 /nix/store/ (cached)"]
-        PKGS["node, bun, tmux, fzf..."]
-    end
+    WEB --> WEBSHELL["#web"]
+    AI --> AISHELL["#ai"]
+    SYS --> SYSSHELL["#systems"]
+    FIN --> FINSHELL["#fintech"]
+    LISP --> LISPSHELL["#lisp"]
+    ALL --> FULLSHELL["#full"]
 
-    subgraph YOUR_SHELL["🐚 Your Shell"]
-        TOOLS["All tools in PATH"]
-        CLAUDE["Claude + MCPs ready"]
-        FUNCS["cc, ralph, cct functions"]
-    end
-
-    ANY_MACHINE --> GITHUB
-    GITHUB --> NIX_STORE
-    NIX_STORE --> YOUR_SHELL
+    WEBSHELL --> WEBTOOLS["Node 22, Bun, Deno<br/>pnpm, TypeScript, Biome"]
+    AISHELL --> AITOOLS["Python 3.12, uv, ruff<br/>pip, virtualenv"]
+    SYSSHELL --> SYSTOOLS["Zig, Go, GCC<br/>CMake, GDB, Valgrind"]
+    FINSHELL --> FINTOOLS["Elixir, Erlang<br/>Python (data)"]
+    LISPSHELL --> LISPTOOLS["SBCL"]
+    FULLSHELL --> FULLTOOLS["Everything above"]
 ```
 
-## Available Shells
+### Shell Reference
 
-```mermaid
-graph LR
-    subgraph CORE["🔧 Core (always included)"]
-        C1["Claude + MCPs"]
-        C2["tmux, fzf, zoxide"]
-        C3["bat, eza, ripgrep"]
-        C4["lazygit, just"]
-    end
+| Building... | Use | Command |
+|:------------|:----|:--------|
+| React/Next.js/Svelte app | `#web` | `nix develop .#web` |
+| REST API with Express/Bun | `#web` | `nix develop .#web` |
+| Mobile app with Capacitor | `#web` | `nix develop .#web` |
+| ML model / data pipeline | `#ai` | `nix develop .#ai` |
+| Python backend (FastAPI) | `#ai` | `nix develop .#ai` |
+| CLI tool in Go/Zig | `#systems` | `nix develop .#systems` |
+| Game engine / embedded | `#systems` | `nix develop .#systems` |
+| Trading system | `#fintech` | `nix develop .#fintech` |
+| Distributed backend | `#fintech` | `nix develop .#fintech` |
+| Learning Lisp | `#lisp` | `nix develop .#lisp` |
+| Full-stack polyglot | `#full` | `nix develop .#full` |
 
-    subgraph SHELLS["📦 Language Shells"]
-        WEB["#web<br/>Node, Bun, Deno"]
-        AI["#ai<br/>Python, uv, ruff"]
-        SYS["#systems<br/>Zig, Go, C/C++"]
-        FIN["#fintech<br/>Elixir, Python"]
-        LISP["#lisp<br/>SBCL"]
-        FULL["#full<br/>Everything"]
-    end
+---
 
-    CORE --> WEB
-    CORE --> AI
-    CORE --> SYS
-    CORE --> FIN
-    CORE --> LISP
-    CORE --> FULL
-```
+## What's Always Included (Core)
 
-| Shell | Command | What You Get |
-|:------|:--------|:-------------|
-| `default` | `nix develop` | Core only |
-| `web` | `nix develop .#web` | Node 22, Bun, Deno, pnpm, Biome |
-| `ai` | `nix develop .#ai` | Python 3.12, uv, ruff |
-| `systems` | `nix develop .#systems` | Zig, Go, GCC, CMake, GDB |
-| `fintech` | `nix develop .#fintech` | Elixir, Erlang, Python |
-| `lisp` | `nix develop .#lisp` | SBCL |
-| `full` | `nix develop .#full` | All languages |
-
-## Architecture
+Every shell includes these essentials:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│ TERMINAL (Alacritty / iTerm / Konsole / any)                        │
-│ ┌─────────────────────────────────────────────────────────────────┐ │
-│ │ TMUX SESSION (survives disconnects, named per-project)          │ │
-│ │ ┌─────────────────────────────────────────────────────────────┐ │ │
-│ │ │ NIX SHELL (isolated, reproducible)                          │ │ │
-│ │ │                                                             │ │ │
-│ │ │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │ │ │
-│ │ │  │ Languages   │  │ DX Tools    │  │ Claude + MCPs       │  │ │ │
-│ │ │  │             │  │             │  │                     │  │ │ │
-│ │ │  │ • node      │  │ • fzf       │  │ • cc (start)        │  │ │ │
-│ │ │  │ • python    │  │ • zoxide    │  │ • ralph (auto)      │  │ │ │
-│ │ │  │ • zig       │  │ • bat       │  │ • cct (tmux)        │  │ │ │
-│ │ │  │ • go        │  │ • lazygit   │  │                     │  │ │ │
-│ │ │  │ • ...       │  │ • ...       │  │ MCPs:               │  │ │ │
-│ │ │  │             │  │             │  │ • chrome-devtools   │  │ │ │
-│ │ │  │             │  │             │  │ • brave-search      │  │ │ │
-│ │ │  │             │  │             │  │ • playwright        │  │ │ │
-│ │ │  └─────────────┘  └─────────────┘  └─────────────────────┘  │ │ │
-│ │ │                                                             │ │ │
-│ │ └─────────────────────────────────────────────────────────────┘ │ │
-│ └─────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
+╔═══════════════════════════════════════════════════════════════════════╗
+║  CORE (in every shell)                                                ║
+╠═══════════════════════════════════════════════════════════════════════╣
+║                                                                       ║
+║  🤖 CLAUDE                                                            ║
+║     cc             Start Claude                                       ║
+║     ralph "task"   Autonomous mode (runs until done)                  ║
+║     cct [name]     Claude in tmux (survives disconnects)              ║
+║                                                                       ║
+║  🔒 SECURITY (baked in, not optional)                                 ║
+║     check-secrets  Scan for leaked API keys                           ║
+║     scan-vulns     Run vulnerability scanner (trivy)                  ║
+║     audit          Full security audit                                ║
+║     gitleaks       Pre-installed for CI/CD                            ║
+║                                                                       ║
+║  📋 PROJECT SETUP                                                     ║
+║     init-project   Copy all templates (CI, hooks, openspec)           ║
+║     init-husky     Just pre-commit hooks                              ║
+║     init-openspec  Just spec-driven development                       ║
+║                                                                       ║
+║  🛠️  INFRASTRUCTURE                                                    ║
+║     supabase       Database CLI                                       ║
+║     vercel         Deployment CLI                                     ║
+║     gh             GitHub CLI                                         ║
+║                                                                       ║
+║  ⚡ DX TOOLS                                                          ║
+║     bat            cat with syntax highlighting                       ║
+║     eza            ls with icons and git status                       ║
+║     fd             find but intuitive                                 ║
+║     rg             grep but 10x faster                                ║
+║     fzf            Ctrl+R fuzzy history, Ctrl+T fuzzy files           ║
+║     zoxide         z command (smart cd that learns)                   ║
+║     lazygit        Git TUI                                            ║
+║     delta          Pretty git diffs                                   ║
+║     just           Language-agnostic task runner                      ║
+║     watchexec      Run command on file changes                        ║
+║                                                                       ║
+║  🌐 BROWSER AUTOMATION (MCPs)                                         ║
+║     chrome-devtools   Browser automation, performance                 ║
+║     brave-search      Web research                                    ║
+║     playwright        E2E testing                                     ║
+║                                                                       ║
+╚═══════════════════════════════════════════════════════════════════════╝
 ```
 
-## Workflow Example
+---
+
+## The Workflow
+
+### Starting a New Project
 
 ```mermaid
 sequenceDiagram
     participant You
     participant Terminal
-    participant Nix
+    participant cc-setup
     participant Claude
 
-    You->>Terminal: cd ~/Desktop/my-project
-    You->>Terminal: nix develop .#web
-    Nix->>Nix: Load packages from cache
-    Nix->>Terminal: Shell ready ✓
+    You->>Terminal: mkdir my-app && cd my-app
+    You->>Terminal: nix develop github:stussysenik/cc-setup#web
+    cc-setup->>Terminal: Load Node, Bun, security tools...
+    Terminal->>You: Shell ready ✓
 
-    You->>Terminal: cct my-project
-    Terminal->>Terminal: Create/attach tmux session
-    Terminal->>Claude: Start Claude
+    You->>Terminal: init-project
+    cc-setup->>Terminal: Copy templates
+    Note over Terminal: scripts/check-secrets.js<br/>.husky/pre-commit<br/>.github/workflows/*<br/>openspec/*
 
-    Note over Claude: MCPs auto-loaded:<br/>chrome-devtools<br/>brave-search<br/>playwright
+    You->>Terminal: git init && git add -A && git commit -m "init"
+    Note over Terminal: Pre-commit runs<br/>Secrets checked ✓
 
-    You->>Claude: "Build the login page"
-    Claude->>Claude: Uses node, runs tests
+    You->>Terminal: cct my-app
+    Terminal->>Claude: Start in tmux session
+    You->>Claude: "Build a landing page with..."
+    Claude->>Claude: Implements, tests, commits
     Claude-->>You: Done ✓
 ```
+
+### Autonomous Development (Ralph)
+
+```mermaid
+flowchart TD
+    START["cct my-feature"] --> TMUX["tmux session created"]
+    TMUX --> RALPH["ralph 'implement user auth with JWT'"]
+
+    subgraph LOOP["Runs until done (survives disconnects)"]
+        RALPH --> RESEARCH["1. Research (brave-search)"]
+        RESEARCH --> SPEC["2. Create spec (openspec)"]
+        SPEC --> TEST["3. Write failing tests"]
+        TEST --> IMPL["4. Implement"]
+        IMPL --> RUN["5. Run tests"]
+        RUN --> PASS{"Pass?"}
+        PASS -->|No| FIX["6. Fix"]
+        FIX --> RUN
+        PASS -->|Yes| COMMIT["7. Commit"]
+        COMMIT --> DONE{"Task done?"}
+        DONE -->|No| RESEARCH
+    end
+
+    DONE -->|Yes| COMPLETE["RALPH_COMPLETE"]
+```
+
+**Why tmux?** You can disconnect (close laptop, SSH drops) and Claude keeps running. Reconnect later with the same `cct my-feature` command.
+
+---
+
+## Templates Included
+
+When you run `init-project`, these are copied to your project:
+
+```
+your-project/
+├── scripts/
+│   ├── check-secrets.js           # Block commits with API keys
+│   └── autonomous/
+│       └── ralph-loop.sh          # Run Claude overnight
+├── .husky/
+│   └── pre-commit                 # Security + lint on commit
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                 # Lint, test, security on push
+│       └── security.yml           # Daily vulnerability scans
+├── openspec/
+│   ├── AGENTS.md                  # Spec-driven dev instructions
+│   └── project.md                 # Project conventions
+├── .claude-ops/
+│   └── config.sh                  # Auto-approve MCP domains
+├── vercel.json                    # Security headers (web only)
+└── .gitignore                     # Comprehensive ignore list
+```
+
+---
+
+## Security Philosophy
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Security is NOT optional. It's baked into the core.                │
+│                                                                     │
+│  EVERY commit → Pre-commit hook checks for secrets                  │
+│  EVERY push   → CI scans with gitleaks + trivy                      │
+│  EVERY day    → Scheduled security scan (if GitHub Actions)         │
+│                                                                     │
+│  You don't have to think about it. It just happens.                 │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**What gets blocked:**
+- API keys (OpenAI, Anthropic, Stripe, AWS, etc.)
+- JWT tokens
+- Database credentials
+- Private keys
+- Any string matching common secret patterns
+
+---
 
 ## Commands Reference
 
 ```
-╔═══════════════════════════════════════════════════════════════════╗
-║ CLAUDE                                                            ║
-╠═══════════════╤═══════════════════════════════════════════════════╣
-║ cc            │ Start Claude                                      ║
-║ ralph "task"  │ Autonomous mode (runs until RALPH_COMPLETE)       ║
-║ cct [name]    │ Claude in tmux session (persistent)               ║
-╠═══════════════╧═══════════════════════════════════════════════════╣
-║ NAVIGATION                                                        ║
-╠═══════════════╤═══════════════════════════════════════════════════╣
-║ z <dir>       │ Smart cd (learns your frequent directories)       ║
-║ Ctrl+R        │ Fuzzy search command history                      ║
-║ Ctrl+T        │ Fuzzy find files                                  ║
-╠═══════════════╧═══════════════════════════════════════════════════╣
-║ WORKFLOW                                                          ║
-╠═══════════════╤═══════════════════════════════════════════════════╣
-║ watch <cmd>   │ Re-run command on file changes                    ║
-║ serve [port]  │ Quick HTTP server (default: 8000)                 ║
-║ lazygit       │ Git TUI                                           ║
-╠═══════════════╧═══════════════════════════════════════════════════╣
-║ IMPROVED CLI (aliased automatically)                              ║
-╠═══════════════╤═══════════════════════════════════════════════════╣
-║ cat           │ → bat (syntax highlighting)                       ║
-║ ls            │ → eza (icons, colors)                             ║
-║ find          │ → fd (faster, intuitive)                          ║
-║ grep          │ → rg (ripgrep, 10x faster)                        ║
-║ diff          │ → delta (pretty diffs)                            ║
-╚═══════════════╧═══════════════════════════════════════════════════╝
+╔═══════════════════════════════════════════════════════════════════════╗
+║  CLAUDE                                                               ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  cc               │ Start Claude                                      ║
+║  ralph "task"     │ Autonomous mode (skips permission prompts)        ║
+║  cct [name]       │ Claude in tmux session (persistent)               ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  PROJECT SETUP                                                        ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  init-project     │ Copy all templates to current directory           ║
+║  init-husky       │ Just pre-commit hooks                             ║
+║  init-openspec    │ Just spec-driven development                      ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  SECURITY                                                             ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  check-secrets    │ Scan for leaked API keys                          ║
+║  scan-vulns       │ Run trivy vulnerability scanner                   ║
+║  audit            │ Full audit (secrets + vulns + deps)               ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  NAVIGATION                                                           ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  z <dir>          │ Smart cd (learns your frequent directories)       ║
+║  Ctrl+R           │ Fuzzy search command history                      ║
+║  Ctrl+T           │ Fuzzy find files                                  ║
+╠═══════════════════╧═══════════════════════════════════════════════════╣
+║  UTILITIES                                                            ║
+╠═══════════════════╤═══════════════════════════════════════════════════╣
+║  watch <cmd>      │ Re-run command on file changes                    ║
+║  serve [port]     │ Quick HTTP server (default 8000)                  ║
+║  lazygit          │ Git TUI                                           ║
+╚═══════════════════╧═══════════════════════════════════════════════════╝
 ```
 
-## Per-Project Auto-Loading
+---
 
-```mermaid
-flowchart LR
-    subgraph WITHOUT["Without direnv"]
-        A1["cd ~/project"] --> A2["nix develop .#web"] --> A3["Ready"]
-    end
+## Per-Project Auto-Loading (direnv)
 
-    subgraph WITH["With direnv ✨"]
-        B1["cd ~/project"] --> B2["Ready<br/>(auto-loaded)"]
-    end
-```
-
-**Setup:**
+Don't want to type `nix develop` every time?
 
 ```bash
-# 1. Create .envrc in your project
-echo 'use flake github:stussysenik/cc-setup#web' > ~/Desktop/my-project/.envrc
-
-# 2. Allow it (one-time per project)
-cd ~/Desktop/my-project
+# In your project directory
+echo 'use flake github:stussysenik/cc-setup#web' > .envrc
 direnv allow
 
-# 3. Now it auto-loads every time you cd into the project
+# Now it auto-loads when you cd into the project
+cd ~/projects/my-app   # → Environment loads automatically
 ```
+
+---
+
+## Alacritty (Optional)
+
+Alacritty is a fast GPU-accelerated terminal. Install it globally:
+
+```bash
+nix profile install nixpkgs#alacritty
+```
+
+Then use it like any terminal. The cc-setup shell runs *inside* Alacritty.
+
+---
+
+## How Nix Works (Mental Model)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  nix develop github:stussysenik/cc-setup#web                        │
+└─────────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  1. Fetch flake.nix from GitHub (cached after first time)           │
+│  2. Read flake.lock → exact package versions                        │
+│  3. Download packages to /nix/store/                                │
+│  4. Enter shell with all tools in PATH                              │
+│  5. Run shellHook (symlinks, aliases, functions)                    │
+└─────────────────────────────────────────────────────────────────────┘
+
+First run: ~2-5 minutes (downloads everything)
+After that: ~1 second (cached)
+```
+
+---
 
 ## Updating
 
-```mermaid
-flowchart LR
-    subgraph YOU["You (edit locally)"]
-        E1["Edit flake.nix"] --> E2["git push"]
-    end
-
-    subgraph ANYONE["Anyone (any machine)"]
-        U1["nix flake update"] --> U2["nix develop"]
-    end
-
-    YOU --> ANYONE
-```
-
 ```bash
-# Add a new tool
+# Add a new tool to your setup
 cd ~/Desktop/cc-setup
-vim flake.nix  # add your package
+vim flake.nix   # Add package to the list
 git add . && git commit -m "Add X" && git push
 
-# Get updates on any machine
+# On any machine, get updates
 nix flake update
 nix develop github:stussysenik/cc-setup#web
 ```
 
-## File Structure
-
-```
-cc-setup/
-├── flake.nix                 # Package definitions + shell hooks
-├── flake.lock                # Pinned versions (reproducibility)
-├── config/
-│   └── claude/
-│       ├── settings.json     # MCP server configs
-│       └── CLAUDE.md         # Global Claude instructions
-├── scripts/
-│   ├── init-husky.sh         # Pre-commit setup helper
-│   └── ralph.sh              # Standalone autonomous launcher
-└── README.md
-```
+---
 
 ## FAQ
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│ Q: First run is slow?                                               │
-├─────────────────────────────────────────────────────────────────────┤
-│ A: Yes. Nix downloads and caches everything once.                   │
-│    Subsequent runs are instant (< 1 second).                        │
-└─────────────────────────────────────────────────────────────────────┘
+**Q: First run is slow?**
+A: Yes, Nix downloads and caches everything. After that it's instant.
 
-┌─────────────────────────────────────────────────────────────────────┐
-│ Q: What about Alacritty?                                            │
-├─────────────────────────────────────────────────────────────────────┤
-│ A: It's just a fast terminal. Install separately:                   │
-│    nix profile install nixpkgs#alacritty                            │
-│    Then use it like any terminal.                                   │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│ Q: How to add a language?                                           │
-├─────────────────────────────────────────────────────────────────────┤
-│ A: Edit flake.nix, add to the relevant *Pkgs list:                  │
-│                                                                     │
-│    systemsPkgs = with pkgs; [                                       │
-│      zig                                                            │
-│      go                                                             │
-│      gfortran    # ← add this                                       │
-│    ];                                                               │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│ Q: Works on macOS?                                                  │
-├─────────────────────────────────────────────────────────────────────┤
-│ A: Yes! Nix works on both Linux and macOS.                          │
-│    Same flake, same tools, same experience.                         │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│ Q: How to remove everything?                                        │
-├─────────────────────────────────────────────────────────────────────┤
-│ A: nix-collect-garbage -d                                           │
-│    This removes all unused packages from /nix/store                 │
-└─────────────────────────────────────────────────────────────────────┘
+**Q: How to add a language?**
+A: Edit `flake.nix`, add to the relevant `*Pkgs` list:
+```nix
+systemsPkgs = with pkgs; [
+  zig
+  go
+  gfortran   # ← add this
+];
 ```
 
-## Mental Model
+**Q: Works on macOS?**
+A: Yes! Same flake works on Linux and macOS.
 
-```mermaid
-graph TB
-    subgraph TRADITIONAL["Traditional Setup 😰"]
-        T1["Install Node"] --> T2["Install Python"]
-        T2 --> T3["Install Go"]
-        T3 --> T4["Version conflicts"]
-        T4 --> T5["'Works on my machine'"]
-    end
+**Q: How to clean up disk space?**
+A: `nix-collect-garbage -d` removes unused packages.
 
-    subgraph NIX["Nix Setup 😌"]
-        N1["flake.nix defines everything"]
-        N1 --> N2["flake.lock pins versions"]
-        N2 --> N3["nix develop"]
-        N3 --> N4["Identical everywhere"]
-    end
-```
+**Q: Can I use this without Claude?**
+A: Yes, all the tools work standalone. Claude is optional.
+
+---
+
+## Architecture
 
 ```
-Traditional:                         Nix:
-─────────────────────────────────    ─────────────────────────────────
-$ node --version                     $ nix develop .#web
-v18.0.0  (varies by machine)         $ node --version
-                                     v22.0.0  (same everywhere, always)
-
-$ pip install numpy                  $ nix develop .#ai
-ERROR: conflicts with...             $ python -c "import numpy"
-                                     (just works, isolated)
+cc-setup/
+├── flake.nix                # Package definitions + shell hooks
+├── flake.lock               # Pinned versions
+│
+├── config/
+│   ├── claude/
+│   │   ├── settings.json    # MCP server configs
+│   │   └── CLAUDE.md        # Global Claude instructions
+│   └── claude-ops/
+│       └── config.sh        # Auto-approve domains
+│
+├── templates/               # Copied by init-project
+│   ├── scripts/
+│   │   ├── check-secrets.js
+│   │   └── autonomous/
+│   │       └── ralph-loop.sh
+│   ├── husky/pre-commit
+│   ├── github/workflows/
+│   │   ├── ci.yml
+│   │   └── security.yml
+│   ├── openspec/
+│   └── vercel.json
+│
+└── scripts/
+    ├── init-project.sh
+    ├── init-husky.sh
+    └── ralph.sh
 ```

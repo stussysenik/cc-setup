@@ -1,5 +1,5 @@
 {
-  description = "Portable Claude Code environment - minimal core";
+  description = "cc-setup: Dev environment boilerplate with security baked in";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,44 +11,50 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        # ════════════════════════════════════════════════════════════
-        # CORE: Always included (Claude + DX essentials)
-        # ════════════════════════════════════════════════════════════
+        # ══════════════════════════════════════════════════════════════════
+        # CORE: Always included (Security + MCPs + DX)
+        # ══════════════════════════════════════════════════════════════════
         corePkgs = with pkgs; [
-          # Session & Terminal
+          # ─── Session & Terminal ───
           tmux
-
-          # Environment auto-loading
           direnv
           nix-direnv
 
-          # Essential CLI improvements
+          # ─── CLI Improvements (DX) ───
           bat               # cat with syntax highlighting
           eza               # ls with icons
           fd                # find but intuitive
           ripgrep           # grep but fast
-          fzf               # fuzzy finder (Ctrl+R magic)
-          zoxide            # cd that learns
-          jq                # JSON
+          fzf               # fuzzy finder
+          zoxide            # smart cd
+          jq                # JSON processor
+          yq                # YAML processor
+          delta             # pretty git diffs
+          lazygit           # git TUI
 
-          # Git
-          git
-          gh
-          delta             # pretty diffs
-          lazygit           # TUI
-
-          # Task running
+          # ─── Task Running ───
           just              # language-agnostic Makefile
           watchexec         # watch files, run commands
 
-          # Browser automation (for Claude MCPs)
+          # ─── Security (ALWAYS INCLUDED) ───
+          gitleaks          # scan for leaked secrets
+          trivy             # vulnerability scanner
+          # semgrep         # (large, optional - use via npx)
+
+          # ─── Infrastructure CLIs ───
+          supabase-cli      # database management
+          nodePackages.vercel # deployment
+          gh                # GitHub CLI
+          git
+
+          # ─── Browser Automation (MCPs) ───
           playwright-driver.browsers
           chromium
         ];
 
-        # ════════════════════════════════════════════════════════════
-        # LANGUAGE PACKS (mix and match)
-        # ════════════════════════════════════════════════════════════
+        # ══════════════════════════════════════════════════════════════════
+        # LANGUAGE PACKS
+        # ══════════════════════════════════════════════════════════════════
 
         webPkgs = with pkgs; [
           nodejs_22
@@ -63,8 +69,8 @@
           python312
           python312Packages.pip
           python312Packages.virtualenv
-          ruff              # fast Python linter
-          uv                # fast pip replacement
+          ruff
+          uv
         ];
 
         systemsPkgs = with pkgs; [
@@ -83,8 +89,7 @@
         ];
 
         lispPkgs = with pkgs; [
-          sbcl              # Steel Bank Common Lisp
-          # quicklisp via sbcl
+          sbcl
         ];
 
         rubyPkgs = with pkgs; [
@@ -92,34 +97,30 @@
           bundler
         ];
 
-        kotlinSwiftPkgs = with pkgs; [
-          kotlin
-          # swift via xcode on macOS
-        ];
-
-        # ════════════════════════════════════════════════════════════
-        # SHELL HOOK (same for all variants)
-        # ════════════════════════════════════════════════════════════
+        # ══════════════════════════════════════════════════════════════════
+        # SHELL HOOK
+        # ══════════════════════════════════════════════════════════════════
         commonShellHook = ''
-          # === Claude Config ===
+          # ─── Claude Config ───
           mkdir -p ~/.claude
           ln -sf ${self}/config/claude/settings.json ~/.claude/settings.json 2>/dev/null || true
           ln -sf ${self}/config/claude/CLAUDE.md ~/.claude/CLAUDE.md 2>/dev/null || true
 
-          # === Environment ===
+          # ─── Environment ───
           export PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}
           export CHROME_PATH=${pkgs.chromium}/bin/chromium
+          export CC_SETUP_DIR="${self}"
 
-          # === Direnv ===
+          # ─── Direnv ───
           eval "$(direnv hook bash 2>/dev/null || direnv hook zsh 2>/dev/null || true)"
 
-          # === Zoxide (smart cd) ===
+          # ─── Zoxide ───
           eval "$(zoxide init bash 2>/dev/null || zoxide init zsh 2>/dev/null || true)"
 
-          # === FZF keybindings ===
+          # ─── FZF ───
           eval "$(fzf --bash 2>/dev/null || fzf --zsh 2>/dev/null || true)"
 
-          # === Aliases ===
+          # ─── Aliases ───
           alias cat='bat --paging=never'
           alias ls='eza --icons'
           alias ll='eza -la --icons --git'
@@ -127,7 +128,10 @@
           alias grep='rg'
           alias diff='delta'
 
-          # === Claude Functions ===
+          # ═══════════════════════════════════════════════════════════════
+          # CLAUDE FUNCTIONS
+          # ═══════════════════════════════════════════════════════════════
+
           cc() { claude "$@"; }
 
           ralph() {
@@ -140,68 +144,130 @@
             tmux has-session -t "$name" 2>/dev/null && tmux attach -t "$name" || tmux new-session -s "$name" "claude"
           }
 
+          # ═══════════════════════════════════════════════════════════════
+          # PROJECT SETUP FUNCTIONS
+          # ═══════════════════════════════════════════════════════════════
+
+          init-project() {
+            source ${self}/scripts/init-project.sh "$@"
+          }
+
+          init-husky() {
+            source ${self}/scripts/init-husky.sh "$@"
+          }
+
+          init-openspec() {
+            mkdir -p openspec/specs
+            cp ${self}/templates/openspec/*.md openspec/
+            echo "✅ OpenSpec initialized"
+          }
+
+          # ═══════════════════════════════════════════════════════════════
+          # SECURITY FUNCTIONS
+          # ═══════════════════════════════════════════════════════════════
+
+          check-secrets() {
+            if [[ -f "scripts/check-secrets.js" ]]; then
+              node scripts/check-secrets.js
+            else
+              echo "Running gitleaks..."
+              gitleaks detect --source . --verbose
+            fi
+          }
+
+          scan-vulns() {
+            echo "🔍 Scanning for vulnerabilities..."
+            trivy fs . --severity HIGH,CRITICAL
+          }
+
+          audit() {
+            echo "🔒 Running full security audit..."
+            echo ""
+            echo "=== Secret Detection ==="
+            check-secrets || true
+            echo ""
+            echo "=== Vulnerability Scan ==="
+            scan-vulns || true
+            echo ""
+            echo "=== Dependency Audit ==="
+            npm audit 2>/dev/null || bun pm audit 2>/dev/null || pnpm audit 2>/dev/null || echo "No package manager found"
+          }
+
+          # ═══════════════════════════════════════════════════════════════
+          # UTILITY FUNCTIONS
+          # ═══════════════════════════════════════════════════════════════
+
           watch() { watchexec --clear --restart -- "$@"; }
           serve() { python3 -m http.server "''${1:-8000}" 2>/dev/null || npx serve -p "''${1:-8000}"; }
 
-          # === Welcome ===
-          echo "🤖 cc | ralph | cct    📁 z (smart cd)    🔍 Ctrl+R (fuzzy history)"
+          # ─── Welcome ───
+          echo ""
+          echo "╔═══════════════════════════════════════════════════════════════╗"
+          echo "║  🛠️  cc-setup: Dev Environment Boilerplate                     ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  CLAUDE        cc | ralph | cct                               ║"
+          echo "║  SETUP         init-project | init-husky | init-openspec      ║"
+          echo "║  SECURITY      check-secrets | scan-vulns | audit             ║"
+          echo "║  NAVIGATION    z (smart cd) | Ctrl+R (fuzzy history)          ║"
+          echo "╚═══════════════════════════════════════════════════════════════╝"
+          echo ""
         '';
 
       in {
         devShells = {
-          # ════════════════════════════════════════════════════════════
-          # DEFAULT: Core only (minimal)
-          # ════════════════════════════════════════════════════════════
+          # ══════════════════════════════════════════════════════════════
+          # DEFAULT: Core only
+          # ══════════════════════════════════════════════════════════════
           default = pkgs.mkShell {
             packages = corePkgs;
             shellHook = commonShellHook;
           };
 
-          # ════════════════════════════════════════════════════════════
+          # ══════════════════════════════════════════════════════════════
           # WEB: JS/TS development
-          # ════════════════════════════════════════════════════════════
+          # ══════════════════════════════════════════════════════════════
           web = pkgs.mkShell {
             packages = corePkgs ++ webPkgs;
             shellHook = commonShellHook;
           };
 
-          # ════════════════════════════════════════════════════════════
-          # AI-ML: Python + data science
-          # ════════════════════════════════════════════════════════════
+          # ══════════════════════════════════════════════════════════════
+          # AI: Python + ML
+          # ══════════════════════════════════════════════════════════════
           ai = pkgs.mkShell {
             packages = corePkgs ++ pythonPkgs;
             shellHook = commonShellHook;
           };
 
-          # ════════════════════════════════════════════════════════════
-          # SYSTEMS: C/C++/Zig/Go (low-level)
-          # ════════════════════════════════════════════════════════════
+          # ══════════════════════════════════════════════════════════════
+          # SYSTEMS: C/C++/Zig/Go
+          # ══════════════════════════════════════════════════════════════
           systems = pkgs.mkShell {
             packages = corePkgs ++ systemsPkgs;
             shellHook = commonShellHook;
           };
 
-          # ════════════════════════════════════════════════════════════
-          # FULL: Web + Python + Systems (your main stack)
-          # ════════════════════════════════════════════════════════════
-          full = pkgs.mkShell {
-            packages = corePkgs ++ webPkgs ++ pythonPkgs ++ systemsPkgs ++ elixirPkgs ++ rubyPkgs;
-            shellHook = commonShellHook;
-          };
-
-          # ════════════════════════════════════════════════════════════
-          # FINTECH: Elixir + Python (fault-tolerant + data)
-          # ════════════════════════════════════════════════════════════
+          # ══════════════════════════════════════════════════════════════
+          # FINTECH: Elixir + Python
+          # ══════════════════════════════════════════════════════════════
           fintech = pkgs.mkShell {
             packages = corePkgs ++ elixirPkgs ++ pythonPkgs;
             shellHook = commonShellHook;
           };
 
-          # ════════════════════════════════════════════════════════════
-          # LISP: Common Lisp exploration
-          # ════════════════════════════════════════════════════════════
+          # ══════════════════════════════════════════════════════════════
+          # LISP: Common Lisp
+          # ══════════════════════════════════════════════════════════════
           lisp = pkgs.mkShell {
             packages = corePkgs ++ lispPkgs;
+            shellHook = commonShellHook;
+          };
+
+          # ══════════════════════════════════════════════════════════════
+          # FULL: Everything
+          # ══════════════════════════════════════════════════════════════
+          full = pkgs.mkShell {
+            packages = corePkgs ++ webPkgs ++ pythonPkgs ++ systemsPkgs ++ elixirPkgs ++ rubyPkgs ++ lispPkgs;
             shellHook = commonShellHook;
           };
         };

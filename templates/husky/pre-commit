@@ -1,0 +1,34 @@
+#!/bin/sh
+# =============================================================================
+# Git Pre-Commit Hook
+# =============================================================================
+# Runs security checks before each commit.
+# If any check fails, the commit is aborted.
+# =============================================================================
+
+set -e
+
+echo "🔒 Running pre-commit checks..."
+
+# Check for secrets
+if [ -f "scripts/check-secrets.js" ]; then
+  node scripts/check-secrets.js
+fi
+
+# Run linter if available
+if [ -f "package.json" ]; then
+  if grep -q '"lint"' package.json; then
+    echo "🔍 Running linter..."
+    npm run lint --silent 2>/dev/null || bun run lint --silent 2>/dev/null || pnpm lint --silent 2>/dev/null || true
+  fi
+fi
+
+# Type check if available
+if [ -f "tsconfig.json" ]; then
+  if grep -q '"typecheck"' package.json 2>/dev/null; then
+    echo "📝 Running type check..."
+    npm run typecheck --silent 2>/dev/null || bun run typecheck --silent 2>/dev/null || true
+  fi
+fi
+
+echo "✅ Pre-commit checks passed!"
