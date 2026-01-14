@@ -1,6 +1,12 @@
 # cc-setup
 
-Portable Claude Code development environment using Nix flakes.
+Portable, language-agnostic development environment using Nix flakes.
+
+**One command. Any machine. Identical environment.**
+
+```bash
+nix develop github:stussysenik/cc-setup
+```
 
 ## Quick Start
 
@@ -11,132 +17,189 @@ curl --proto '=https' --tlsv1.2 -sSf -L \
   https://install.determinate.systems/nix | sh -s -- install
 ```
 
-Restart your terminal after installation.
+Restart your terminal.
 
 ### 2. Enter the Environment
 
-**From anywhere:**
 ```bash
-nix develop github:YOUR_USERNAME/cc-setup
+nix develop github:stussysenik/cc-setup
 ```
 
-**Or clone locally:**
-```bash
-git clone https://github.com/YOUR_USERNAME/cc-setup.git ~/cc-setup
-nix develop ~/cc-setup
-```
+That's it. You now have 50+ tools ready to use.
 
-## What You Get
+## What's Included
 
+### Claude Code
 | Command | Description |
 |---------|-------------|
 | `cc` | Start Claude Code |
-| `ralph` | Autonomous mode (skips permissions) |
+| `ralph` | Autonomous mode (Ralph Wiggum loop) |
 | `cct [name]` | Claude in a tmux session |
 | `init-husky` | Setup pre-commits in current project |
 
-### Packages Included
-- **Terminal**: tmux, alacritty
-- **Node.js**: node 20, pnpm, bun
-- **Linting**: eslint, prettier, biome
-- **Testing**: playwright with browsers
-- **Git**: git, gh (GitHub CLI)
-- **Utils**: jq, curl, ripgrep, fd
+### JS/TS Runtimes
+- **Node.js 22** (LTS)
+- **Bun** (fast runtime + bundler)
+- **Deno** (secure, TS-first)
+- **pnpm, yarn** (package managers)
 
-### MCP Servers (Auto-loaded)
-- `chrome-devtools` - Browser automation & performance
-- `brave-search` - Web search for research
+### Better CLI Tools (Ergonomics!)
+| Old | New | Why |
+|-----|-----|-----|
+| `cat` | `bat` | Syntax highlighting |
+| `ls` | `eza` | Colors, icons, git status |
+| `find` | `fd` | Faster, intuitive syntax |
+| `grep` | `rg` | 10x faster (ripgrep) |
+| `cd` | `z` | Learns your frequent dirs |
+| `sed` | `sd` | Human-readable syntax |
+| `du` | `dust` | Visual disk usage |
+| `ps` | `procs` | Better process viewer |
+| `top` | `btm` | Beautiful system monitor |
+| `man` | `tldr` | Examples, not essays |
+| `curl` | `xh` | HTTPie but faster |
 
-## Configuration
+### Workflow Tools
+| Tool | Purpose |
+|------|---------|
+| `just` | Language-agnostic task runner (better Makefile) |
+| `watchexec` | Run commands on file changes |
+| `fzf` | Fuzzy finder (Ctrl+R = magic) |
+| `direnv` | Auto-load env per directory |
+| `lazygit` | TUI for git |
+| `lazydocker` | TUI for Docker |
+| `k9s` | TUI for Kubernetes |
 
-### Environment Variables
+### Linting & Formatting
+- **biome** - Fast linter + formatter (JS/TS)
+- **eslint, prettier** - Classic combo
+- **shellcheck, shfmt** - Bash linting
+- **actionlint** - GitHub Actions linting
+- **yamllint** - YAML validation
 
-Set these in your shell profile for API keys:
+### Secrets & Security
+- **age** - Modern encryption (like GPG but simple)
+- **sops** - Encrypt secrets in git
+- **git-crypt** - Transparent file encryption
+
+### Containers & Infra
+- **docker-compose** - Multi-container apps
+- **dive** - Explore docker image layers
+- **k9s** - Kubernetes dashboard in terminal
+
+## Navigation Superpowers
+
+After entering the shell:
+
+```bash
+# Fuzzy search command history
+Ctrl+R
+
+# Fuzzy find files
+Ctrl+T
+
+# Jump to frequently used directories
+z projects    # goes to ~/projects if you've been there
+z my          # goes to ~/Desktop/mymind-clone
+
+# Interactive JSON
+cat data.json | fx
+```
+
+## Environment Variables
+
+Set these in your `~/.bashrc` or `~/.zshrc`:
+
 ```bash
 export BRAVE_API_KEY="your-brave-api-key"
 ```
 
-### Customizing Configs
+## Direnv Integration
 
-After entering the nix shell, configs are symlinked:
-- `~/.claude/settings.json` → MCP servers
-- `~/.claude/CLAUDE.md` → Global instructions
+For per-project auto-loading, create `.envrc` in any project:
 
-To use the terminal configs:
 ```bash
-# tmux
-cp ~/cc-setup/config/tmux.conf ~/.tmux.conf
+# .envrc
+use flake github:stussysenik/cc-setup
 
-# alacritty
-mkdir -p ~/.config/alacritty
-cp ~/cc-setup/config/alacritty.toml ~/.config/alacritty/
+# Project-specific vars
+export DATABASE_URL="postgres://localhost/mydb"
 ```
+
+Then: `direnv allow`
+
+Now every time you `cd` into that project, the environment loads automatically.
 
 ## Updating
 
-When you add new packages or update configs:
-
 ```bash
-# Push changes
-git add . && git commit -m "Add new tool" && git push
+# You: edit flake.nix, add tools
+git add . && git commit -m "Add tool X" && git push
 
-# On any machine, get updates:
+# Anyone (including future you on another machine):
 nix flake update
-nix develop github:YOUR_USERNAME/cc-setup
+nix develop github:stussysenik/cc-setup
 ```
 
-## Ralph Wiggum Mode
+## The Nix Mental Model
 
-Autonomous execution mode for persistent iteration:
-
-```bash
-ralph "implement the feature described in SPEC.md"
 ```
+┌─────────────────────────────────────────────────────────────┐
+│  nix develop github:stussysenik/cc-setup                    │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  1. Download flake.nix + flake.lock from GitHub             │
+│  2. Read flake.lock → exact package versions (hashes)       │
+│  3. Download packages to /nix/store/abc123-nodejs-22/       │
+│  4. Enter shell with all tools in PATH                      │
+│  5. Run shellHook (symlinks, aliases, functions)            │
+└─────────────────────────────────────────────────────────────┘
 
-Ralph will:
-1. Run until task complete or error
-2. Persist through failures (errors = data)
-3. Output `RALPH_COMPLETE` when done
-
-Best used with tmux for session persistence:
-```bash
-cct ralph-session
-# Then run ralph inside the session
+┌─────────────────────────────────────────────────────────────┐
+│  nix flake update                                           │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  1. Check nixpkgs for latest commit                         │
+│  2. Update flake.lock with new hashes                       │
+│  3. Next `nix develop` gets newer versions                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Project Structure
 
 ```
 cc-setup/
-├── flake.nix              # Nix packages & shell config
-├── flake.lock             # Locked versions
+├── flake.nix              # All packages + shell config
+├── flake.lock             # Pinned versions (reproducibility!)
 ├── config/
 │   ├── claude/
 │   │   ├── settings.json  # MCP servers
 │   │   └── CLAUDE.md      # Global Claude instructions
-│   ├── tmux.conf          # tmux configuration
-│   └── alacritty.toml     # Terminal theme
+│   ├── tmux.conf          # Session config
+│   └── alacritty.toml     # Terminal theme (Tokyo Night)
 └── scripts/
     ├── init-husky.sh      # Pre-commit setup
-    └── ralph.sh           # Standalone ralph launcher
+    └── ralph.sh           # Standalone autonomous launcher
 ```
 
-## Troubleshooting
+## FAQ
 
-### Nix command not found
-Restart your terminal or run:
-```bash
-. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+**Q: First run is slow?**
+A: Nix downloads and caches everything. Subsequent runs are instant.
+
+**Q: How to add Python/Rust/Go?**
+A: Edit `flake.nix`, add to packages list:
+```nix
+python312
+rustc cargo
+go
 ```
 
-### Playwright browsers not found
-The `PLAYWRIGHT_BROWSERS_PATH` is set automatically. If issues persist:
-```bash
-npx playwright install
-```
+**Q: Works on macOS?**
+A: Yes! Nix works on Linux and macOS. Same flake, same tools.
 
-### MCP servers not loading
-Ensure `~/.claude/settings.json` is symlinked correctly:
-```bash
-ls -la ~/.claude/settings.json
-```
+**Q: How to remove everything?**
+A: `nix-collect-garbage -d` removes unused packages.
